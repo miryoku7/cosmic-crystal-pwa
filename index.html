@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#06060f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CosmicCrystal">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="コズミッククリスタル - 宇宙のクリッカーゲーム">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<title>コズミッククリスタル</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & ROOT ===== */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#06060f;--panel:rgba(12,12,30,0.9);--border:rgba(100,140,255,0.18);
+  --accent:#6cf;--accent2:#c084fc;--accent3:#f472b6;--gold:#fbbf24;
+  --text:#e0e8ff;--dim:#6b7db3;
+  --glow:0 0 20px rgba(102,204,255,0.3);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+html{font-size:14px;height:100%;overflow:hidden}
+body{
+  font-family:'Zen Kaku Gothic New','Rajdhani',sans-serif;
+  background:var(--bg);color:var(--text);
+  height:100%;overflow:hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 50%,rgba(102,204,255,0.04) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 20%,rgba(192,132,252,0.04) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 80%,rgba(244,114,182,0.03) 0%,transparent 50%);
+  padding-top:var(--safe-top);
+  padding-bottom:var(--safe-bottom);
+  padding-left:var(--safe-left);
+  padding-right:var(--safe-right);
+}
+
+/* ===== STARS ===== */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0}
+.stars span{
+  position:absolute;background:#fff;border-radius:50%;
+  animation:twinkle var(--d,3s) ease-in-out infinite alternate;opacity:0.3;
+}
+@keyframes twinkle{0%{opacity:0.2;transform:scale(1)}100%{opacity:0.8;transform:scale(1.5)}}
+
+/* ===== APP LAYOUT (Mobile-first) ===== */
+.app{
+  position:relative;z-index:1;
+  display:flex;flex-direction:column;
+  height:100%;overflow:hidden;
+}
+
+/* ===== HEADER ===== */
+.header{
+  flex-shrink:0;
+  padding:10px 16px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(20px);background:rgba(6,6,15,0.85);
+  gap:8px;
+}
+.header h1{
+  font-family:'Orbitron',sans-serif;font-size:0.85rem;letter-spacing:2px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2),var(--accent3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  text-transform:uppercase;white-space:nowrap;flex-shrink:0;
+}
+.header-stats{
+  display:flex;gap:10px;font-family:'Rajdhani',sans-serif;
+  font-size:0.78rem;color:var(--dim);flex-wrap:wrap;justify-content:flex-end;
+}
+.header-stats span{display:flex;align-items:center;gap:3px}
+.header-stats .val{color:var(--gold);font-weight:700}
+.prestige-display{
+  display:flex;align-items:center;gap:4px;padding:4px 10px;
+  background:rgba(192,132,252,0.08);border:1px solid rgba(192,132,252,0.2);
+  border-radius:20px;font-size:0.78rem;
+}
+.prestige-display .pd-val{color:var(--accent2);font-weight:700;font-family:'Rajdhani',sans-serif}
+
+/* ===== CENTER AREA ===== */
+.center{
+  flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px 8px 12px;
+  position:relative;
+}
+.counter-display{text-align:center;margin-bottom:16px}
+.counter-amount{
+  font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;
+  background:linear-gradient(135deg,#fff,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  line-height:1.2;
+}
+.counter-label{font-size:0.75rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+
+/* ===== CRYSTAL ===== */
+.crystal-wrap{
+  position:relative;cursor:pointer;user-select:none;
+  touch-action:manipulation;
+}
+.crystal-wrap:active .crystal-main{transform:scale(0.9)}
+.crystal-main{
+  width:140px;height:140px;position:relative;transition:transform 0.1s;
+  filter:drop-shadow(0 0 30px rgba(102,204,255,0.5)) drop-shadow(0 0 60px rgba(192,132,252,0.25));
+}
+.crystal-svg{width:100%;height:100%}
+.crystal-pulse{
+  position:absolute;inset:-24px;border-radius:50%;
+  background:radial-gradient(circle,rgba(102,204,255,0.15) 0%,transparent 70%);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:0.5}50%{transform:scale(1.15);opacity:1}}
+.crystal-ring{
+  position:absolute;inset:-32px;border:1px solid rgba(102,204,255,0.15);
+  border-radius:50%;animation:ringRotate 12s linear infinite;
+}
+.crystal-ring::before{
+  content:'✦';position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  color:var(--accent);font-size:0.6rem;
+}
+.crystal-ring:nth-child(2){inset:-44px;animation-duration:18s;animation-direction:reverse;border-color:rgba(192,132,252,0.1)}
+.crystal-ring:nth-child(2)::before{color:var(--accent2)}
+@keyframes ringRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.crystal-shine{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,0.15) 50%,transparent 70%);
+  animation:shine 3s ease-in-out infinite;border-radius:50%;
+}
+@keyframes shine{0%,100%{opacity:0;transform:scale(0.8)}50%{opacity:1;transform:scale(1.05)}}
+
+/* ===== CLICK PARTICLES ===== */
+.click-particle{
+  position:absolute;pointer-events:none;font-family:'Orbitron',sans-serif;
+  font-weight:900;font-size:1rem;color:var(--gold);
+  text-shadow:0 0 10px rgba(251,191,36,0.5);
+  animation:floatUp 0.9s ease-out forwards;z-index:10;
+}
+@keyframes floatUp{
+  0%{opacity:1;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-70px) scale(0.5)}
+}
+
+/* ===== PER-SEC BAR ===== */
+.per-sec-bar{
+  margin-top:10px;padding:6px 16px;background:rgba(102,204,255,0.05);
+  border:1px solid var(--border);border-radius:20px;font-size:0.78rem;
+  display:flex;align-items:center;gap:6px;
+}
+.per-sec-bar .psb-label{color:var(--dim)}
+.per-sec-bar .psb-val{color:var(--accent);font-weight:700;font-family:'Rajdhani',sans-serif}
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav{
+  flex-shrink:0;
+  display:flex;border-top:1px solid var(--border);
+  background:rgba(6,6,15,0.9);backdrop-filter:blur(20px);
+}
+.nav-btn{
+  flex:1;padding:10px 4px 8px;border:none;background:none;
+  color:var(--dim);font-family:inherit;font-size:0.6rem;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;
+  transition:all 0.2s;border-top:2px solid transparent;
+  touch-action:manipulation;
+}
+.nav-btn .nav-icon{font-size:1.3rem;line-height:1}
+.nav-btn.active{color:var(--accent);border-top-color:var(--accent)}
+.nav-btn:active{opacity:0.7}
+
+/* ===== PANEL AREA ===== */
+.panel-area{
+  flex:1;overflow:hidden;position:relative;
+}
+.panel-view{
+  display:none;height:100%;overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;scrollbar-color:rgba(102,204,255,0.2) transparent;
+}
+.panel-view.active{display:block}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(102,204,255,0.2);border-radius:2px}
+
+.panel-section{padding:12px 14px}
+.panel-title{
+  font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:3px;
+  text-transform:uppercase;color:var(--dim);margin-bottom:10px;
+  display:flex;align-items:center;gap:8px;
+}
+.panel-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+/* ===== BUY AMOUNT ===== */
+.buy-amount{display:flex;gap:4px;margin-bottom:10px}
+.buy-btn{
+  flex:1;padding:7px 4px;border:1px solid var(--border);background:rgba(255,255,255,0.02);
+  color:var(--dim);border-radius:8px;font-family:inherit;font-size:0.72rem;
+  cursor:pointer;transition:all 0.2s;touch-action:manipulation;
+}
+.buy-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(102,204,255,0.08)}
+
+/* ===== FACILITY CARDS ===== */
+.facility-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s;
+  display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;
+  touch-action:manipulation;
+}
+.facility-card:active{transform:scale(0.98);opacity:0.85}
+.facility-card.locked{opacity:0.3;pointer-events:none}
+.facility-card.affordable{border-color:rgba(251,191,36,0.4);box-shadow:0 0 12px rgba(251,191,36,0.1)}
+.fac-icon{font-size:1.8rem;text-align:center;line-height:1}
+.fac-info h3{font-size:0.88rem;font-weight:700}
+.fac-info .fac-desc{font-size:0.7rem;color:var(--dim);margin-top:2px}
+.fac-info .fac-prod{font-size:0.7rem;color:var(--accent);margin-top:2px}
+.fac-right{text-align:right}
+.fac-cost{font-family:'Rajdhani',sans-serif;font-size:0.88rem;color:var(--gold);font-weight:700}
+.fac-owned{font-size:0.7rem;color:var(--dim);margin-top:2px}
+
+/* ===== UPGRADE GRID ===== */
+.upgrade-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.upgrade-card{
+  border-radius:12px;border:2px solid var(--border);
+  background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:8px 4px 6px;gap:3px;
+  cursor:pointer;transition:all 0.2s;position:relative;
+  touch-action:manipulation;min-height:72px;
+}
+.upgrade-card .uc-icon{font-size:1.5rem;line-height:1}
+.upgrade-card .uc-name{font-size:0.55rem;color:var(--dim);text-align:center;line-height:1.2;word-break:break-all}
+.upgrade-card:active{transform:scale(0.94)}
+.upgrade-card.bought{border-color:rgba(251,191,36,0.4);background:rgba(251,191,36,0.06)}
+.upgrade-card.bought .uc-name{color:var(--gold)}
+.upgrade-card.locked{opacity:0.2;pointer-events:none}
+.upgrade-card.available{border-color:rgba(102,204,255,0.5);box-shadow:0 0 10px rgba(102,204,255,0.15)}
+.upgrade-card.can-afford{border-color:rgba(251,191,36,0.5);box-shadow:0 0 10px rgba(251,191,36,0.15)}
+
+/* ===== REINCARNATION ===== */
+.reincarnation-panel{
+  background:linear-gradient(135deg,rgba(244,114,182,0.08),rgba(192,132,252,0.08));
+  border:1px solid rgba(244,114,182,0.2);border-radius:12px;padding:14px;margin-bottom:12px;
+}
+.reinc-title{font-family:'Orbitron',sans-serif;font-size:0.75rem;color:var(--accent3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.reinc-info{font-size:0.78rem;color:var(--dim);line-height:1.8}
+.reinc-info .highlight{color:var(--accent2);font-weight:700}
+.reinc-btn{
+  width:100%;margin-top:12px;padding:13px;border:2px solid var(--accent3);
+  background:rgba(244,114,182,0.1);color:var(--accent3);border-radius:10px;
+  font-family:'Orbitron',sans-serif;font-size:0.78rem;cursor:pointer;
+  transition:all 0.3s;letter-spacing:2px;touch-action:manipulation;
+}
+.reinc-btn:active{transform:scale(0.97)}
+.reinc-btn:disabled{opacity:0.3;cursor:not-allowed}
+
+/* ===== STATS ===== */
+.stat-row{
+  display:flex;justify-content:space-between;padding:8px 0;
+  border-bottom:1px solid rgba(100,140,255,0.06);font-size:0.8rem;
+}
+.stat-row .stat-label{color:var(--dim)}
+.stat-row .stat-val{color:var(--text);font-weight:600;font-family:'Rajdhani',sans-serif}
+
+/* ===== ACHIEVEMENTS ===== */
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px}
+.ach-item{
+  border-radius:10px;border:1px solid var(--border);
+  background:var(--panel);display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;position:relative;transition:all 0.2s;
+  min-height:52px;cursor:pointer;touch-action:manipulation;
+}
+.ach-item.unlocked{border-color:rgba(251,191,36,0.5);background:rgba(251,191,36,0.05)}
+.ach-item.locked{opacity:0.2;filter:grayscale(1)}
+
+/* ===== NOTIFICATION ===== */
+.notif-container{
+  position:fixed;top:calc(var(--safe-top) + 60px);right:12px;
+  z-index:3000;display:flex;flex-direction:column;gap:6px;
+  pointer-events:none;
+}
+.notif{
+  padding:10px 14px;background:rgba(12,12,30,0.95);border:1px solid var(--gold);
+  border-radius:10px;font-size:0.78rem;color:var(--gold);
+  animation:notifIn 0.3s ease-out,notifOut 0.3s ease-in 2.7s forwards;
+  backdrop-filter:blur(10px);max-width:260px;
+}
+@keyframes notifIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes notifOut{from{opacity:1}to{opacity:0;transform:translateY(-16px)}}
+
+/* ===== MODAL (汎用) ===== */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:4000;
+  align-items:flex-end;justify-content:center;backdrop-filter:blur(6px);
+  padding-bottom:var(--safe-bottom);
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:#0d0d22;border:1px solid var(--border);border-radius:20px 20px 0 0;
+  padding:20px 20px calc(16px + var(--safe-bottom));width:100%;max-width:480px;
+  animation:modalUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  max-height:90vh;overflow-y:auto;
+}
+@keyframes modalUp{from{opacity:0;transform:translateY(60px)}to{opacity:1;transform:translateY(0)}}
+.modal-handle{width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 16px}
+.modal h2{font-family:'Orbitron',sans-serif;font-size:1rem;margin-bottom:10px;
+  background:linear-gradient(135deg,var(--accent3),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.modal p{font-size:0.82rem;color:var(--dim);line-height:1.7;margin-bottom:16px}
+.modal-btns{display:flex;gap:10px;justify-content:center}
+.modal-btn{
+  flex:1;padding:12px 16px;border-radius:10px;font-family:inherit;font-size:0.85rem;
+  cursor:pointer;border:none;transition:all 0.2s;touch-action:manipulation;
+}
+.modal-btn.confirm{background:var(--accent3);color:#fff;font-weight:700}
+.modal-btn.confirm:active{filter:brightness(1.2)}
+.modal-btn.cancel{background:rgba(255,255,255,0.05);color:var(--dim);border:1px solid var(--border)}
+
+/* ===== UPGRADE DETAIL MODAL ===== */
+.upg-modal-icon{font-size:3rem;text-align:center;margin-bottom:8px}
+.upg-modal-name{font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--accent);text-align:center;margin-bottom:4px}
+.upg-modal-type{font-size:0.7rem;color:var(--dim);text-align:center;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+.upg-modal-desc{
+  background:rgba(102,204,255,0.05);border:1px solid var(--border);
+  border-radius:10px;padding:12px;margin-bottom:14px;
+}
+.upg-modal-desc .desc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:0.82rem}
+.upg-modal-desc .desc-row:not(:last-child){border-bottom:1px solid rgba(100,140,255,0.08)}
+.upg-modal-desc .desc-label{color:var(--dim)}
+.upg-modal-desc .desc-val{color:var(--text);font-weight:700;font-family:'Rajdhani',sans-serif}
+.upg-modal-desc .desc-val.highlight{color:var(--gold)}
+.upg-modal-desc .desc-val.green{color:#4ade80}
+.upg-modal-status{
+  text-align:center;padding:8px;border-radius:8px;font-size:0.8rem;font-weight:700;
+  margin-bottom:14px;
+}
+.upg-modal-status.bought{background:rgba(251,191,36,0.1);color:var(--gold);border:1px solid rgba(251,191,36,0.3)}
+.upg-modal-status.available{background:rgba(102,204,255,0.08);color:var(--accent);border:1px solid rgba(102,204,255,0.3)}
+.upg-modal-status.locked{background:rgba(255,255,255,0.03);color:var(--dim);border:1px solid var(--border)}
+
+/* ===== REINC UPGRADE GRID ===== */
+.reinc-upg-list{display:flex;flex-direction:column;gap:8px}
+.reinc-upg-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  padding:12px;display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;
+  cursor:pointer;transition:all 0.2s;touch-action:manipulation;
+}
+.reinc-upg-card:active{transform:scale(0.98)}
+.reinc-upg-card.bought{border-color:rgba(251,191,36,0.3);opacity:0.7;pointer-events:none}
+.reinc-upg-card.can-afford{border-color:rgba(192,132,252,0.5);box-shadow:0 0 12px rgba(192,132,252,0.15)}
+.reinc-upg-card.locked{opacity:0.3;pointer-events:none}
+.ruc-icon{font-size:1.6rem;text-align:center}
+.ruc-info h3{font-size:0.85rem;font-weight:700}
+.ruc-info .ruc-desc{font-size:0.7rem;color:var(--dim);margin-top:2px}
+.ruc-right{text-align:right}
+.ruc-cost{font-family:'Rajdhani',sans-serif;font-size:0.85rem;color:var(--accent2);font-weight:700}
+.ruc-status{font-size:0.65rem;margin-top:2px}
+.ruc-status.owned{color:var(--gold)}
+.ruc-status.locked{color:var(--dim)}
+
+/* ===== INSTALL BANNER ===== */
+.install-banner{
+  display:none;position:fixed;bottom:calc(56px + var(--safe-bottom));left:12px;right:12px;
+  background:rgba(12,12,30,0.97);border:1px solid var(--accent);border-radius:14px;
+  padding:12px 16px;z-index:2000;backdrop-filter:blur(20px);
+  flex-direction:row;align-items:center;gap:12px;
+  animation:notifIn 0.3s ease-out;
+}
+.install-banner.show{display:flex}
+.install-banner-text{flex:1;font-size:0.78rem;color:var(--text)}
+.install-banner-text strong{color:var(--accent);display:block;margin-bottom:2px}
+.install-banner-btns{display:flex;gap:6px;flex-shrink:0}
+.ib-btn{
+  padding:7px 12px;border-radius:8px;font-size:0.75rem;font-family:inherit;
+  cursor:pointer;border:none;touch-action:manipulation;
+}
+.ib-btn.install{background:var(--accent);color:#06060f;font-weight:700}
+.ib-btn.dismiss{background:rgba(255,255,255,0.05);color:var(--dim);border:1px solid var(--border)}
+
+/* ===== LANDSCAPE LAYOUT ===== */
+@media(orientation:landscape) and (max-height:500px){
+  .center{padding:8px;flex-direction:row;gap:16px}
+  .crystal-main{width:100px;height:100px}
+  .counter-amount{font-size:1.6rem}
+  .counter-display{margin-bottom:0}
+  .per-sec-bar{margin-top:6px}
+}
+
+/* ===== TABLET / DESKTOP ===== */
+@media(min-width:768px){
+  html{font-size:15px}
+  .app{flex-direction:row;flex-wrap:wrap;height:100%}
+  .header{width:100%;flex-shrink:0}
+  .center{
+    width:300px;flex-shrink:0;
+    border-right:1px solid var(--border);
+    height:calc(100% - 50px); /* header height */
+    overflow:hidden;
+  }
+  .panel-area{
+    flex:1;min-width:0;
+    height:calc(100% - 50px);
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr;
+  }
+  .bottom-nav{display:none}
+  /* Desktop: show facilities+upgrades on left, achievements on right */
+  #view-facilities{display:block!important;border-right:1px solid var(--border)}
+  #view-reinc{display:none!important}
+  #view-achiev{display:block!important}
+  #view-stats{display:none!important}
+  .crystal-main{width:160px;height:160px}
+  .counter-amount{font-size:2.4rem}
+}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="notif-container" id="notifs"></div>
+
+<!-- ===== REINCARNATION CONFIRM MODAL ===== -->
+<div class="modal-overlay" id="reincModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>⟡ 転生確認 ⟡</h2>
+    <p>
+      全ての施設・アップグレードがリセットされます。<br>
+      <strong id="modalSouls" style="color:var(--accent2);font-size:1.2em">0</strong> ソウルクリスタルを獲得。<br>
+      <span style="color:var(--dim);font-size:0.85em">ソウル1個 = 全生産・クリック +5%（永続）</span>
+    </p>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeReincModal()">キャンセル</button>
+      <button class="modal-btn confirm" onclick="doReincarnation()">転生する</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== UPGRADE DETAIL MODAL ===== -->
+<div class="modal-overlay" id="upgModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="upg-modal-icon" id="upgModalIcon"></div>
+    <div class="upg-modal-name" id="upgModalName"></div>
+    <div class="upg-modal-type" id="upgModalType"></div>
+    <div class="upg-modal-desc" id="upgModalDesc"></div>
+    <div class="upg-modal-status" id="upgModalStatus"></div>
+    <div class="modal-btns" id="upgModalBtns"></div>
+  </div>
+</div>
+
+<!-- ===== ACHIEVEMENT DETAIL MODAL ===== -->
+<div class="modal-overlay" id="achModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="upg-modal-icon" id="achModalIcon"></div>
+    <div class="upg-modal-name" id="achModalName"></div>
+    <div class="upg-modal-desc" id="achModalDesc" style="text-align:center;color:var(--dim);font-size:0.82rem;margin-bottom:14px"></div>
+    <div class="upg-modal-status" id="achModalStatus"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal('achModal')" style="max-width:160px;margin:0 auto">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== INSTALL BANNER ===== -->
+<div class="install-banner" id="installBanner">
+  <div class="install-banner-text">
+    <strong>📱 アプリとして追加</strong>
+    ホーム画面に追加してオフラインでも遊べます
+  </div>
+  <div class="install-banner-btns">
+    <button class="ib-btn install" id="installBtn">追加</button>
+    <button class="ib-btn dismiss" onclick="dismissInstall()">後で</button>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div class="app">
+  <header class="header">
+    <h1>✦ Cosmic Crystal</h1>
+    <div class="header-stats">
+      <span>クリック: <span class="val" id="hTotalClicks">0</span></span>
+      <span>転生: <span class="val" id="hReincs">0</span></span>
+      <div class="prestige-display">
+        <span>💎</span>
+        <span class="pd-val" id="hSouls">0</span>
+        <span style="color:var(--dim)">ソウル</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Center: Crystal + Counter -->
+  <div class="center">
+    <div class="counter-display">
+      <div class="counter-amount" id="crystalCount">0</div>
+      <div class="counter-label">クリスタル</div>
+    </div>
+    <div class="crystal-wrap" id="crystalBtn">
+      <div class="crystal-ring"></div>
+      <div class="crystal-ring"></div>
+      <div class="crystal-pulse"></div>
+      <div class="crystal-main">
+        <svg class="crystal-svg" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="cg1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6cf"/>
+              <stop offset="50%" stop-color="#c084fc"/>
+              <stop offset="100%" stop-color="#f472b6"/>
+            </linearGradient>
+            <linearGradient id="cg2" x1="100%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.4)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </linearGradient>
+            <filter id="crystalGlow">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+          </defs>
+          <polygon points="100,15 145,55 155,105 130,160 100,185 70,160 45,105 55,55" fill="url(#cg1)" filter="url(#crystalGlow)" opacity="0.9"/>
+          <polygon points="100,15 145,55 155,105 100,130 45,105 55,55" fill="url(#cg2)" opacity="0.3"/>
+          <polygon points="100,15 120,50 100,90 80,50" fill="rgba(255,255,255,0.15)"/>
+          <line x1="100" y1="15" x2="100" y2="185" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+          <line x1="45" y1="105" x2="155" y2="105" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+          <line x1="55" y1="55" x2="130" y2="160" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+          <line x1="145" y1="55" x2="70" y2="160" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+        </svg>
+        <div class="crystal-shine"></div>
+      </div>
+    </div>
+    <div class="per-sec-bar">
+      <span class="psb-label">毎秒</span>
+      <span class="psb-val" id="perSecDisplay">0</span>
+      <span class="psb-label">クリスタル/s</span>
+    </div>
+  </div>
+
+  <!-- Panel Area -->
+  <div class="panel-area">
+
+    <!-- VIEW: Facilities -->
+    <div class="panel-view active" id="view-facilities">
+      <div class="panel-section">
+        <div class="panel-title">施設</div>
+        <div class="buy-amount">
+          <button class="buy-btn active" onclick="setBuyAmount(1,this)">×1</button>
+          <button class="buy-btn" onclick="setBuyAmount(10,this)">×10</button>
+          <button class="buy-btn" onclick="setBuyAmount(100,this)">×100</button>
+          <button class="buy-btn" onclick="setBuyAmount(-1,this)">最大</button>
+        </div>
+        <div id="facilityList"></div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-title">アップグレード</div>
+        <div class="upgrade-grid" id="upgradeGrid"></div>
+      </div>
+    </div>
+
+    <!-- VIEW: Reincarnation -->
+    <div class="panel-view" id="view-reinc">
+      <div class="panel-section">
+        <div class="reincarnation-panel">
+          <div class="reinc-title">🌀 転生システム</div>
+          <div class="reinc-info">
+            現在のソウルクリスタル: <span class="highlight" id="rCurSouls">0</span><br>
+            転生で獲得可能: <span class="highlight" id="rNextSouls">0</span><br>
+            現在のボーナス: <span class="highlight" id="rBonus">+0%</span><br>
+            転生後のボーナス: <span class="highlight" id="rNextBonus">+0%</span>
+          </div>
+          <button class="reinc-btn" id="reincBtn" disabled onclick="openReincModal()">⟡ 転生する ⟡</button>
+        </div>
+        <div class="panel-title" style="margin-top:4px">転生アップグレード</div>
+        <div class="reinc-upg-list" id="reincUpgradeList"></div>
+      </div>
+    </div>
+
+    <!-- VIEW: Achievements -->
+    <div class="panel-view" id="view-achiev">
+      <div class="panel-section">
+        <div class="panel-title">実績</div>
+        <div class="ach-grid" id="achGrid"></div>
+      </div>
+    </div>
+
+    <!-- VIEW: Stats -->
+    <div class="panel-view" id="view-stats">
+      <div class="panel-section">
+        <div class="panel-title">統計</div>
+        <div id="statsPanel"></div>
+      </div>
+    </div>
+
+  </div><!-- /panel-area -->
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="switchView('facilities',this)">
+      <span class="nav-icon">🏗️</span>施設
+    </button>
+    <button class="nav-btn" onclick="switchView('reinc',this)">
+      <span class="nav-icon">🌀</span>転生
+    </button>
+    <button class="nav-btn" onclick="switchView('achiev',this)">
+      <span class="nav-icon">🏆</span>実績
+    </button>
+    <button class="nav-btn" onclick="switchView('stats',this)">
+      <span class="nav-icon">📊</span>統計
+    </button>
+  </nav>
+</div>
+
+<script>
+'use strict';
+
+// ==================== GAME STATE ====================
+let G = {
+  crystals: 0, totalCrystals: 0, totalClicks: 0,
+  facilities: {}, upgrades: {}, achievements: new Set(),
+  soulCrystals: 0, totalSoulCrystals: 0, reincarnations: 0,
+  reincUpgrades: {}, startTime: Date.now(), lastSave: Date.now(),
+  totalAllTime: 0
+};
+let buyAmount = 1;
+
+// ==================== FORMAT ====================
+function fmt(n) {
+  if (n < 1e3) return Math.floor(n).toLocaleString();
+  const units = ['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
+  let i = 0;
+  while (n >= 1e3 && i < units.length - 1) { n /= 1e3; i++; }
+  return (i === 0 ? Math.floor(n) : n.toFixed(2)) + units[i];
+}
+function fmtFull(n) { return Math.floor(n).toLocaleString(); }
+
+// ==================== FACILITIES ====================
+const FACILITIES = [
+  { id:'cursor',     name:'カーソル',     icon:'👆', desc:'自動でクリックし続ける',       baseCost:15,     baseProd:0.1,   costMult:1.15 },
+  { id:'miner',      name:'採掘者',       icon:'⛏️', desc:'地下のクリスタルを採掘する',   baseCost:100,    baseProd:1,     costMult:1.15 },
+  { id:'forge',      name:'鍛冶場',       icon:'🔥', desc:'原石を精錬してクリスタルに',   baseCost:1100,   baseProd:8,     costMult:1.15 },
+  { id:'temple',     name:'神殿',         icon:'🏛️', desc:'祈りの力でクリスタルを生成',   baseCost:12000,  baseProd:47,    costMult:1.15 },
+  { id:'academy',    name:'魔法学院',     icon:'📚', desc:'魔法の力でクリスタルを合成',   baseCost:130000, baseProd:260,   costMult:1.15 },
+  { id:'portal',     name:'次元ポータル', icon:'🌀', desc:'異次元からクリスタルを取り込む',baseCost:1.4e6,  baseProd:1400,  costMult:1.15 },
+  { id:'timemach',   name:'時空装置',     icon:'⏳', desc:'時間を操りクリスタルを生産',   baseCost:2e7,    baseProd:7800,  costMult:1.15 },
+  { id:'antimatter', name:'対消滅炉',     icon:'⚛️', desc:'反物質の消滅エネルギーを変換', baseCost:3.3e8,  baseProd:44000, costMult:1.15 },
+  { id:'prism',      name:'プリズム',     icon:'🔮', desc:'光を屈折させてクリスタルに結晶化',baseCost:5.1e9, baseProd:260000,costMult:1.15 },
+  { id:'nebula',     name:'星雲エンジン', icon:'🌌', desc:'星雲のガスをクリスタルに変換', baseCost:7.5e10, baseProd:1.6e6, costMult:1.15 },
+  { id:'singularity',name:'特異点',       icon:'🕳️', desc:'特異点の無限エネルギーを活用', baseCost:1e12,   baseProd:1e7,   costMult:1.15 },
+  { id:'multiverse', name:'多元宇宙',     icon:'✨', desc:'全宇宙の力を結集してクリスタルを生産',baseCost:1.4e13,baseProd:6.5e7,costMult:1.15 },
+];
+
+function getFacCost(fac, count) {
+  return Math.ceil(fac.baseCost * Math.pow(fac.costMult, count));
+}
+function getBulkCost(fac, owned, amount) {
+  let total = 0;
+  for (let i = 0; i < amount; i++) total += getFacCost(fac, owned + i);
+  return total;
+}
+function getMaxBuy(fac, owned, budget) {
+  let count = 0, total = 0;
+  while (true) {
+    const c = getFacCost(fac, owned + count);
+    if (total + c > budget) break;
+    total += c;
+    count++;
+    if (count > 10000) break;
+  }
+  return count;
+}
+function getFacProd(fac) {
+  const owned = G.facilities[fac.id] || 0;
+  let mult = 1;
+  for (const u of UPGRADES) {
+    if (u.type === 'facility' && u.target === fac.id && G.upgrades[u.id]) mult *= u.mult;
+  }
+  for (const u of UPGRADES) {
+    if (u.type === 'allprod' && G.upgrades[u.id]) mult *= u.mult;
+  }
+  for (const u of REINC_UPGRADES) {
+    if (u.type === 'allprod' && G.reincUpgrades[u.id]) mult *= u.mult;
+  }
+  mult *= (1 + G.soulCrystals * 0.05);
+  return fac.baseProd * owned * mult;
+}
+
+// ==================== UPGRADES ====================
+const UPGRADES = [
+  // Click upgrades
+  { id:'u1',  name:'強化クリック',   icon:'👆', desc:'クリックで得られるクリスタルが2倍になる',  cost:100,    type:'click',    mult:2,  req:() => G.totalClicks >= 10 },
+  { id:'u2',  name:'ダブルクリック', icon:'👆', desc:'クリックで得られるクリスタルが2倍になる',  cost:5000,   type:'click',    mult:2,  req:() => G.totalClicks >= 100 },
+  { id:'u3',  name:'メガクリック',   icon:'💥', desc:'クリックで得られるクリスタルが5倍になる',  cost:5e5,    type:'click',    mult:5,  req:() => G.totalClicks >= 500 },
+  { id:'u4',  name:'ギガクリック',   icon:'🌟', desc:'クリックで得られるクリスタルが10倍になる', cost:5e8,    type:'click',    mult:10, req:() => G.totalClicks >= 2000 },
+  // Facility upgrades
+  { id:'u10', name:'鋭いカーソル',   icon:'🖱️', desc:'カーソルの生産量が2倍になる',   cost:200,    type:'facility', target:'cursor',     mult:2, req:() => (G.facilities.cursor||0) >= 1 },
+  { id:'u11', name:'高速カーソル',   icon:'⚡', desc:'カーソルの生産量が5倍になる',   cost:20000,  type:'facility', target:'cursor',     mult:5, req:() => (G.facilities.cursor||0) >= 10 },
+  { id:'u12', name:'改良ピッケル',   icon:'⛏️', desc:'採掘者の生産量が2倍になる',    cost:1000,   type:'facility', target:'miner',      mult:2, req:() => (G.facilities.miner||0) >= 1 },
+  { id:'u13', name:'ダイヤピッケル', icon:'💎', desc:'採掘者の生産量が5倍になる',    cost:50000,  type:'facility', target:'miner',      mult:5, req:() => (G.facilities.miner||0) >= 10 },
+  { id:'u14', name:'溶岩鍛冶',       icon:'🌋', desc:'鍛冶場の生産量が2倍になる',    cost:11000,  type:'facility', target:'forge',      mult:2, req:() => (G.facilities.forge||0) >= 1 },
+  { id:'u15', name:'古代の祝福',     icon:'🙏', desc:'神殿の生産量が2倍になる',      cost:120000, type:'facility', target:'temple',     mult:2, req:() => (G.facilities.temple||0) >= 1 },
+  { id:'u16', name:'高等魔法',       icon:'🧙', desc:'魔法学院の生産量が2倍になる',  cost:1.3e6,  type:'facility', target:'academy',    mult:2, req:() => (G.facilities.academy||0) >= 1 },
+  { id:'u17', name:'安定ポータル',   icon:'🌀', desc:'次元ポータルの生産量が2倍になる',cost:1.4e7, type:'facility', target:'portal',     mult:2, req:() => (G.facilities.portal||0) >= 1 },
+  { id:'u18', name:'時空歪曲',       icon:'⏰', desc:'時空装置の生産量が2倍になる',  cost:2e8,    type:'facility', target:'timemach',   mult:2, req:() => (G.facilities.timemach||0) >= 1 },
+  { id:'u19', name:'反物質増幅',     icon:'⚛️', desc:'対消滅炉の生産量が2倍になる', cost:3.3e9,  type:'facility', target:'antimatter', mult:2, req:() => (G.facilities.antimatter||0) >= 1 },
+  { id:'u20', name:'プリズム増幅',   icon:'🌈', desc:'プリズムの生産量が2倍になる',  cost:5.1e10, type:'facility', target:'prism',      mult:2, req:() => (G.facilities.prism||0) >= 1 },
+  { id:'u21', name:'星雲圧縮',       icon:'🌠', desc:'星雲エンジンの生産量が2倍になる',cost:7.5e11,type:'facility', target:'nebula',     mult:2, req:() => (G.facilities.nebula||0) >= 1 },
+  { id:'u22', name:'特異点拡張',     icon:'🕳️', desc:'特異点の生産量が2倍になる',   cost:1e13,   type:'facility', target:'singularity',mult:2, req:() => (G.facilities.singularity||0) >= 1 },
+  { id:'u23', name:'多元宇宙共鳴',   icon:'✨', desc:'多元宇宙の生産量が2倍になる', cost:1.4e14, type:'facility', target:'multiverse', mult:2, req:() => (G.facilities.multiverse||0) >= 1 },
+  // Global
+  { id:'u30', name:'効率革命',       icon:'📈', desc:'全施設の生産量が2倍になる',    cost:1e7,    type:'allprod',  mult:2, req:() => G.totalCrystals >= 1e6 },
+  { id:'u31', name:'宇宙の恩恵',     icon:'🌌', desc:'全施設の生産量が3倍になる',    cost:1e10,   type:'allprod',  mult:3, req:() => G.totalCrystals >= 1e9 },
+  { id:'u32', name:'次元超越',       icon:'🔷', desc:'全施設の生産量が5倍になる',    cost:1e13,   type:'allprod',  mult:5, req:() => G.totalCrystals >= 1e12 },
+];
+
+// ==================== REINC UPGRADES ====================
+const REINC_UPGRADES = [
+  { id:'ru1', name:'魂の共鳴',    icon:'💠', desc:'全施設の生産量が2倍になる（転生後も永続）',  cost:5,   type:'allprod', mult:2 },
+  { id:'ru2', name:'魂の覚醒',    icon:'💜', desc:'全施設の生産量が3倍になる（転生後も永続）',  cost:25,  type:'allprod', mult:3 },
+  { id:'ru3', name:'魂の超越',    icon:'🔮', desc:'全施設の生産量が5倍になる（転生後も永続）',  cost:100, type:'allprod', mult:5 },
+  { id:'ru4', name:'クリック強化', icon:'⚡', desc:'クリック値が5倍になる（転生後も永続）',     cost:10,  type:'click',   mult:5 },
+  { id:'ru5', name:'開始ブースト', icon:'🚀', desc:'クリック値が10倍になる（転生後も永続）',    cost:50,  type:'click',   mult:10 },
+  { id:'ru6', name:'永遠の力',    icon:'♾️', desc:'全施設の生産量が10倍になる（転生後も永続）', cost:500, type:'allprod', mult:10 },
+];
+
+// ==================== ACHIEVEMENTS ====================
+const ACHIEVEMENTS = [
+  { id:'a1',  icon:'👆', name:'初めてのクリック',   desc:'クリックを1回行う',              check:()=> G.totalClicks >= 1 },
+  { id:'a2',  icon:'💯', name:'100クリック',        desc:'クリックを100回行う',             check:()=> G.totalClicks >= 100 },
+  { id:'a3',  icon:'🔥', name:'1000クリック',       desc:'クリックを1000回行う',            check:()=> G.totalClicks >= 1000 },
+  { id:'a4',  icon:'⚡', name:'1万クリック',        desc:'クリックを10000回行う',           check:()=> G.totalClicks >= 10000 },
+  { id:'a5',  icon:'💎', name:'初めてのクリスタル', desc:'クリスタルを100個獲得する',       check:()=> G.totalCrystals >= 100 },
+  { id:'a6',  icon:'💰', name:'千個のクリスタル',   desc:'クリスタルを1000個獲得する',      check:()=> G.totalCrystals >= 1000 },
+  { id:'a7',  icon:'🏦', name:'百万長者',           desc:'クリスタルを100万個獲得する',     check:()=> G.totalCrystals >= 1e6 },
+  { id:'a8',  icon:'👑', name:'億万長者',           desc:'クリスタルを10億個獲得する',      check:()=> G.totalCrystals >= 1e9 },
+  { id:'a9',  icon:'🌟', name:'兆の領域',           desc:'クリスタルを1兆個獲得する',       check:()=> G.totalCrystals >= 1e12 },
+  { id:'a10', icon:'⛏️', name:'初めての施設',       desc:'施設を初めて購入する',            check:()=> Object.values(G.facilities).some(v=>v>0) },
+  { id:'a11', icon:'🏗️', name:'建築家',             desc:'施設を合計10個購入する',          check:()=> Object.values(G.facilities).reduce((a,b)=>a+b,0) >= 10 },
+  { id:'a12', icon:'🏰', name:'帝国の主',           desc:'施設を合計50個購入する',          check:()=> Object.values(G.facilities).reduce((a,b)=>a+b,0) >= 50 },
+  { id:'a13', icon:'🌀', name:'初めての転生',       desc:'転生を1回行う',                   check:()=> G.reincarnations >= 1 },
+  { id:'a14', icon:'🔄', name:'転生マスター',       desc:'転生を5回行う',                   check:()=> G.reincarnations >= 5 },
+  { id:'a15', icon:'♾️', name:'永遠の旅人',         desc:'転生を10回行う',                  check:()=> G.reincarnations >= 10 },
+  { id:'a16', icon:'💠', name:'ソウルコレクター',   desc:'ソウルクリスタルを10個所持する',  check:()=> G.soulCrystals >= 10 },
+  { id:'a17', icon:'💜', name:'ソウルマスター',     desc:'ソウルクリスタルを100個所持する', check:()=> G.soulCrystals >= 100 },
+  { id:'a18', icon:'🌌', name:'宇宙の支配者',       desc:'全種類の施設を1つ以上所持する',   check:()=> FACILITIES.every(f=>(G.facilities[f.id]||0)>0) },
+  { id:'a19', icon:'📈', name:'毎秒1万',            desc:'毎秒1万クリスタルを生産する',     check:()=> getPerSec() >= 10000 },
+  { id:'a20', icon:'🚀', name:'毎秒100万',          desc:'毎秒100万クリスタルを生産する',   check:()=> getPerSec() >= 1e6 },
+];
+
+// ==================== CORE ====================
+function getClickValue() {
+  let val = 1;
+  for (const u of UPGRADES) {
+    if (u.type === 'click' && G.upgrades[u.id]) val *= u.mult;
+  }
+  for (const u of REINC_UPGRADES) {
+    if (u.type === 'click' && G.reincUpgrades[u.id]) val *= u.mult;
+  }
+  val *= (1 + G.soulCrystals * 0.05);
+  return val;
+}
+function getPerSec() {
+  let total = 0;
+  for (const fac of FACILITIES) total += getFacProd(fac);
+  return total;
+}
+function calcReincSouls() {
+  return Math.floor(Math.sqrt(G.totalCrystals / 1e6));
+}
+
+// ==================== CLICK ====================
+function doClick(e) {
+  const val = getClickValue();
+  G.crystals += val;
+  G.totalCrystals += val;
+  G.totalClicks++;
+  G.totalAllTime += val;
+  spawnParticle(e, val);
+}
+function spawnParticle(e, val) {
+  const btn = document.getElementById('crystalBtn');
+  const rect = btn.getBoundingClientRect();
+  const p = document.createElement('div');
+  p.className = 'click-particle';
+  p.textContent = '+' + fmt(val);
+  const cx = e.clientX !== undefined ? e.clientX : rect.left + rect.width / 2;
+  const cy = e.clientY !== undefined ? e.clientY : rect.top + rect.height / 2;
+  p.style.left = (cx - rect.left + (Math.random() - 0.5) * 40) + 'px';
+  p.style.top = (cy - rect.top - 20) + 'px';
+  btn.appendChild(p);
+  setTimeout(() => p.remove(), 900);
+}
+
+// ==================== BUY ====================
+function buyFacility(id) {
+  const fac = FACILITIES.find(f => f.id === id);
+  const owned = G.facilities[id] || 0;
+  let amount = buyAmount === -1 ? getMaxBuy(fac, owned, G.crystals) : buyAmount;
+  if (amount <= 0) return;
+  const cost = getBulkCost(fac, owned, amount);
+  if (G.crystals >= cost) {
+    G.crystals -= cost;
+    G.facilities[id] = owned + amount;
+    renderFacilities();
+  }
+}
+
+// アップグレードはタップで詳細モーダルを表示
+function openUpgradeModal(id) {
+  const u = UPGRADES.find(x => x.id === id);
+  if (!u) return;
+  const bought = !!G.upgrades[id];
+  const available = u.req();
+  const canAfford = G.crystals >= u.cost;
+
+  document.getElementById('upgModalIcon').textContent = u.icon;
+  document.getElementById('upgModalName').textContent = u.name;
+
+  // Type label
+  const typeLabels = { click:'クリック強化', facility:'施設強化', allprod:'全施設強化' };
+  document.getElementById('upgModalType').textContent = typeLabels[u.type] || '';
+
+  // Detail rows
+  let rows = `
+    <div class="desc-row"><span class="desc-label">効果</span><span class="desc-val green">${u.desc}</span></div>
+    <div class="desc-row"><span class="desc-label">倍率</span><span class="desc-val highlight">×${u.mult}</span></div>`;
+  if (u.type === 'facility') {
+    const fac = FACILITIES.find(f => f.id === u.target);
+    if (fac) rows += `<div class="desc-row"><span class="desc-label">対象施設</span><span class="desc-val">${fac.icon} ${fac.name}</span></div>`;
+  }
+  if (!bought) {
+    rows += `<div class="desc-row"><span class="desc-label">コスト</span><span class="desc-val highlight">${fmt(u.cost)} クリスタル</span></div>`;
+    if (available) {
+      rows += `<div class="desc-row"><span class="desc-label">所持クリスタル</span><span class="desc-val ${canAfford ? 'green' : ''}">${fmt(G.crystals)}</span></div>`;
+    }
+  }
+  document.getElementById('upgModalDesc').innerHTML = rows;
+
+  // Status
+  const statusEl = document.getElementById('upgModalStatus');
+  if (bought) {
+    statusEl.className = 'upg-modal-status bought';
+    statusEl.textContent = '✓ 取得済み';
+  } else if (!available) {
+    statusEl.className = 'upg-modal-status locked';
+    statusEl.textContent = '🔒 解放条件未達成';
+  } else if (canAfford) {
+    statusEl.className = 'upg-modal-status available';
+    statusEl.textContent = '✦ 購入可能';
+  } else {
+    statusEl.className = 'upg-modal-status locked';
+    statusEl.textContent = `クリスタルが ${fmt(u.cost - G.crystals)} 不足`;
+  }
+
+  // Buttons
+  const btnsEl = document.getElementById('upgModalBtns');
+  if (!bought && available && canAfford) {
+    btnsEl.innerHTML = `
+      <button class="modal-btn cancel" onclick="closeModal('upgModal')">閉じる</button>
+      <button class="modal-btn confirm" onclick="confirmBuyUpgrade('${id}')">購入する</button>`;
+  } else {
+    btnsEl.innerHTML = `<button class="modal-btn cancel" onclick="closeModal('upgModal')" style="max-width:160px;margin:0 auto">閉じる</button>`;
+  }
+
+  document.getElementById('upgModal').classList.add('open');
+}
+
+function confirmBuyUpgrade(id) {
+  const u = UPGRADES.find(x => x.id === id);
+  if (!u || G.upgrades[id] || G.crystals < u.cost || !u.req()) return;
+  G.crystals -= u.cost;
+  G.upgrades[id] = true;
+  closeModal('upgModal');
+  notify('🔧 ' + u.name + ' を取得！');
+  renderUpgrades();
+}
+
+function openReincUpgradeModal(id) {
+  const u = REINC_UPGRADES.find(x => x.id === id);
+  if (!u) return;
+  const bought = !!G.reincUpgrades[id];
+  const canAfford = G.soulCrystals >= u.cost;
+
+  document.getElementById('upgModalIcon').textContent = u.icon;
+  document.getElementById('upgModalName').textContent = u.name;
+  document.getElementById('upgModalType').textContent = '転生アップグレード（永続）';
+
+  const typeLabels = { click:'クリック強化', allprod:'全施設強化' };
+  let rows = `
+    <div class="desc-row"><span class="desc-label">効果</span><span class="desc-val green">${u.desc}</span></div>
+    <div class="desc-row"><span class="desc-label">倍率</span><span class="desc-val highlight">×${u.mult}</span></div>
+    <div class="desc-row"><span class="desc-label">種別</span><span class="desc-val">${typeLabels[u.type] || ''}</span></div>`;
+  if (!bought) {
+    rows += `<div class="desc-row"><span class="desc-label">コスト</span><span class="desc-val highlight">${u.cost} ソウルクリスタル</span></div>`;
+    rows += `<div class="desc-row"><span class="desc-label">所持ソウル</span><span class="desc-val ${canAfford ? 'green' : ''}">${fmtFull(G.soulCrystals)}</span></div>`;
+  }
+  document.getElementById('upgModalDesc').innerHTML = rows;
+
+  const statusEl = document.getElementById('upgModalStatus');
+  if (bought) {
+    statusEl.className = 'upg-modal-status bought';
+    statusEl.textContent = '✓ 取得済み（転生後も有効）';
+  } else if (canAfford) {
+    statusEl.className = 'upg-modal-status available';
+    statusEl.textContent = '✦ 購入可能';
+  } else {
+    statusEl.className = 'upg-modal-status locked';
+    statusEl.textContent = `ソウルが ${u.cost - G.soulCrystals} 不足`;
+  }
+
+  const btnsEl = document.getElementById('upgModalBtns');
+  if (!bought && canAfford) {
+    btnsEl.innerHTML = `
+      <button class="modal-btn cancel" onclick="closeModal('upgModal')">閉じる</button>
+      <button class="modal-btn confirm" onclick="confirmBuyReincUpgrade('${id}')">購入する</button>`;
+  } else {
+    btnsEl.innerHTML = `<button class="modal-btn cancel" onclick="closeModal('upgModal')" style="max-width:160px;margin:0 auto">閉じる</button>`;
+  }
+
+  document.getElementById('upgModal').classList.add('open');
+}
+
+function confirmBuyReincUpgrade(id) {
+  const u = REINC_UPGRADES.find(x => x.id === id);
+  if (!u || G.reincUpgrades[id] || G.soulCrystals < u.cost) return;
+  G.soulCrystals -= u.cost;
+  G.reincUpgrades[id] = true;
+  closeModal('upgModal');
+  notify('💎 ' + u.name + ' を取得！');
+  renderReincUpgrades();
+}
+
+// ==================== REINCARNATION ====================
+function openReincModal() {
+  const souls = calcReincSouls();
+  if (souls < 1) return;
+  document.getElementById('modalSouls').textContent = fmt(souls);
+  document.getElementById('reincModal').classList.add('open');
+}
+function closeReincModal() {
+  document.getElementById('reincModal').classList.remove('open');
+}
+function doReincarnation() {
+  const souls = calcReincSouls();
+  if (souls < 1) return;
+  G.soulCrystals += souls;
+  G.totalSoulCrystals += souls;
+  G.reincarnations++;
+  G.crystals = 0;
+  G.totalCrystals = 0;
+  G.facilities = {};
+  G.upgrades = {};
+  closeReincModal();
+  notify('🌀 転生完了！+' + fmt(souls) + ' ソウルクリスタル');
+  renderAll();
+}
+
+// ==================== MODALS ====================
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+// Tap outside modal to close
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+
+// Achievement detail
+function openAchModal(id) {
+  const a = ACHIEVEMENTS.find(x => x.id === id);
+  if (!a) return;
+  const unlocked = G.achievements.has(id);
+  document.getElementById('achModalIcon').textContent = a.icon;
+  document.getElementById('achModalName').textContent = a.name;
+  document.getElementById('achModalDesc').textContent = a.desc;
+  const statusEl = document.getElementById('achModalStatus');
+  if (unlocked) {
+    statusEl.className = 'upg-modal-status bought';
+    statusEl.textContent = '✓ 達成済み';
+  } else {
+    statusEl.className = 'upg-modal-status locked';
+    statusEl.textContent = '未達成';
+  }
+  document.getElementById('achModal').classList.add('open');
+}
+
+// ==================== RENDER ====================
+function renderFacilities() {
+  const el = document.getElementById('facilityList');
+  el.innerHTML = '';
+  for (const fac of FACILITIES) {
+    const owned = G.facilities[fac.id] || 0;
+    let amount = buyAmount === -1 ? getMaxBuy(fac, owned, G.crystals) : buyAmount;
+    if (amount < 1 && buyAmount === -1) amount = 1;
+    const cost = getBulkCost(fac, owned, amount);
+    const prod = getFacProd(fac);
+    const canAfford = G.crystals >= cost;
+    const unlocked = G.totalCrystals >= fac.baseCost * 0.5 || owned > 0;
+    const card = document.createElement('div');
+    card.className = 'facility-card' + (!unlocked ? ' locked' : '') + (canAfford && unlocked ? ' affordable' : '');
+    card.onclick = () => buyFacility(fac.id);
+    const amountLabel = buyAmount === -1 ? (amount > 1 ? `×${amount}` : '×1') : `×${buyAmount}`;
+    card.innerHTML = `
+      <div class="fac-icon">${fac.icon}</div>
+      <div class="fac-info">
+        <h3>${fac.name}</h3>
+        <div class="fac-desc">${fac.desc}</div>
+        ${owned > 0 ? `<div class="fac-prod">${fmt(prod)}/s</div>` : ''}
+      </div>
+      <div class="fac-right">
+        <div class="fac-cost">${fmt(cost)}</div>
+        <div class="fac-owned">${owned > 0 ? `所持: ${owned}` : amountLabel}</div>
+      </div>`;
+    el.appendChild(card);
+  }
+}
+
+function renderUpgrades() {
+  const el = document.getElementById('upgradeGrid');
+  el.innerHTML = '';
+  for (const u of UPGRADES) {
+    const bought = !!G.upgrades[u.id];
+    const available = u.req();
+    const canAfford = available && G.crystals >= u.cost;
+    const card = document.createElement('div');
+    let cls = 'upgrade-card';
+    if (bought) cls += ' bought';
+    else if (!available) cls += ' locked';
+    else if (canAfford) cls += ' can-afford';
+    else cls += ' available';
+    card.className = cls;
+    card.onclick = () => openUpgradeModal(u.id);
+    card.innerHTML = `<div class="uc-icon">${u.icon}</div><div class="uc-name">${u.name}</div>`;
+    el.appendChild(card);
+  }
+}
+
+function renderReincUpgrades() {
+  const el = document.getElementById('reincUpgradeList');
+  el.innerHTML = '';
+  for (const u of REINC_UPGRADES) {
+    const bought = !!G.reincUpgrades[u.id];
+    const canAfford = !bought && G.soulCrystals >= u.cost;
+    const card = document.createElement('div');
+    let cls = 'reinc-upg-card';
+    if (bought) cls += ' bought';
+    else if (canAfford) cls += ' can-afford';
+    card.className = cls;
+    card.onclick = () => openReincUpgradeModal(u.id);
+    const typeLabel = u.type === 'click' ? 'クリック強化' : '全施設強化';
+    card.innerHTML = `
+      <div class="ruc-icon">${u.icon}</div>
+      <div class="ruc-info">
+        <h3>${u.name}</h3>
+        <div class="ruc-desc">${typeLabel} ×${u.mult}</div>
+      </div>
+      <div class="ruc-right">
+        <div class="ruc-cost">${bought ? '' : u.cost + ' ソウル'}</div>
+        <div class="ruc-status ${bought ? 'owned' : 'locked'}">${bought ? '✓ 取得済み' : ''}</div>
+      </div>`;
+    el.appendChild(card);
+  }
+}
+
+function renderAchievements() {
+  const el = document.getElementById('achGrid');
+  el.innerHTML = '';
+  for (const a of ACHIEVEMENTS) {
+    const unlocked = G.achievements.has(a.id);
+    const item = document.createElement('div');
+    item.className = 'ach-item' + (unlocked ? ' unlocked' : ' locked');
+    item.textContent = a.icon;
+    item.onclick = () => openAchModal(a.id);
+    el.appendChild(item);
+  }
+}
+
+function renderStats() {
+  const el = document.getElementById('statsPanel');
+  const ps = getPerSec();
+  const elapsed = Math.floor((Date.now() - G.startTime) / 1000);
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  const s = elapsed % 60;
+  const totalFac = Object.values(G.facilities).reduce((a, b) => a + b, 0);
+  const totalUpg = Object.values(G.upgrades).filter(Boolean).length;
+  const stats = [
+    ['現在のクリスタル', fmt(G.crystals)],
+    ['累計クリスタル', fmt(G.totalCrystals)],
+    ['全時間クリスタル', fmt(G.totalAllTime)],
+    ['クリック値', fmt(getClickValue())],
+    ['毎秒生産', fmt(ps)],
+    ['総クリック数', fmtFull(G.totalClicks)],
+    ['施設合計', totalFac],
+    ['アップグレード', totalUpg + '/' + UPGRADES.length],
+    ['ソウルクリスタル', fmtFull(G.soulCrystals)],
+    ['累計ソウル', fmtFull(G.totalSoulCrystals)],
+    ['ソウルボーナス', '+' + (G.soulCrystals * 5) + '%'],
+    ['転生回数', G.reincarnations],
+    ['実績', G.achievements.size + '/' + ACHIEVEMENTS.length],
+    ['プレイ時間', `${h}h ${m}m ${s}s`],
+  ];
+  el.innerHTML = stats.map(([l, v]) =>
+    `<div class="stat-row"><span class="stat-label">${l}</span><span class="stat-val">${v}</span></div>`
+  ).join('');
+}
+
+function updateDisplays() {
+  document.getElementById('crystalCount').textContent = fmt(G.crystals);
+  document.getElementById('perSecDisplay').textContent = fmt(getPerSec());
+  document.getElementById('hTotalClicks').textContent = fmtFull(G.totalClicks);
+  document.getElementById('hReincs').textContent = G.reincarnations;
+  document.getElementById('hSouls').textContent = fmtFull(G.soulCrystals);
+  const nextSouls = calcReincSouls();
+  document.getElementById('rCurSouls').textContent = fmtFull(G.soulCrystals);
+  document.getElementById('rNextSouls').textContent = fmtFull(nextSouls);
+  document.getElementById('rBonus').textContent = '+' + (G.soulCrystals * 5) + '%';
+  document.getElementById('rNextBonus').textContent = '+' + ((G.soulCrystals + nextSouls) * 5) + '%';
+  document.getElementById('reincBtn').disabled = nextSouls < 1;
+}
+
+function checkAchievements() {
+  for (const a of ACHIEVEMENTS) {
+    if (!G.achievements.has(a.id) && a.check()) {
+      G.achievements.add(a.id);
+      notify('🏆 実績解除: ' + a.name);
+      renderAchievements();
+    }
+  }
+}
+
+function renderAll() {
+  renderFacilities();
+  renderUpgrades();
+  renderReincUpgrades();
+  renderAchievements();
+  renderStats();
+  updateDisplays();
+}
+
+// ==================== NAVIGATION ====================
+function switchView(id, btn) {
+  document.querySelectorAll('.panel-view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+function setBuyAmount(n, btn) {
+  buyAmount = n;
+  document.querySelectorAll('.buy-amount .buy-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFacilities();
+}
+
+// ==================== NOTIFICATION ====================
+function notify(msg) {
+  const el = document.getElementById('notifs');
+  const n = document.createElement('div');
+  n.className = 'notif';
+  n.textContent = msg;
+  el.appendChild(n);
+  setTimeout(() => n.remove(), 3000);
+}
+
+// ==================== STARS ====================
+function createStars() {
+  const el = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('span');
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.setProperty('--d', (2 + Math.random() * 4) + 's');
+    s.style.animationDelay = Math.random() * 4 + 's';
+    const size = (1 + Math.random() * 2) + 'px';
+    s.style.width = s.style.height = size;
+    el.appendChild(s);
+  }
+}
+
+// ==================== SAVE / LOAD ====================
+function saveGame() {
+  try {
+    const data = { ...G, achievements: [...G.achievements] };
+    localStorage.setItem('cosmicCrystalPWA', JSON.stringify(data));
+  } catch(e) {}
+}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem('cosmicCrystalPWA');
+    if (raw) {
+      const d = JSON.parse(raw);
+      Object.assign(G, d);
+      G.achievements = new Set(d.achievements || []);
+    }
+  } catch(e) {}
+}
+
+// ==================== GAME LOOP ====================
+let lastTick = Date.now();
+function gameTick() {
+  const now = Date.now();
+  const dt = Math.min((now - lastTick) / 1000, 1); // cap at 1s
+  lastTick = now;
+  const production = getPerSec() * dt;
+  G.crystals += production;
+  G.totalCrystals += production;
+  G.totalAllTime += production;
+  updateDisplays();
+  checkAchievements();
+  if (now - G.lastSave > 30000) {
+    saveGame();
+    G.lastSave = now;
+  }
+}
+
+let renderCounter = 0;
+function renderTick() {
+  renderCounter++;
+  if (renderCounter % 10 === 0) renderFacilities();
+  if (renderCounter % 30 === 0) { renderStats(); renderUpgrades(); renderReincUpgrades(); }
+}
+
+// ==================== PWA INSTALL ====================
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!localStorage.getItem('installDismissed')) {
+    document.getElementById('installBanner').classList.add('show');
+  }
+});
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+});
+function dismissInstall() {
+  document.getElementById('installBanner').classList.remove('show');
+  localStorage.setItem('installDismissed', '1');
+}
+
+// ==================== INIT ====================
+function init() {
+  createStars();
+  loadGame();
+  renderAll();
+
+  const crystalBtn = document.getElementById('crystalBtn');
+  crystalBtn.addEventListener('click', doClick);
+  crystalBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    doClick(e.touches[0]);
+  }, { passive: false });
+
+  // Prevent double-tap zoom on crystal
+  crystalBtn.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+
+  // Save on page hide
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) saveGame();
+  });
+  window.addEventListener('pagehide', saveGame);
+
+  setInterval(gameTick, 50);
+  setInterval(renderTick, 200);
+
+  // Register Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
