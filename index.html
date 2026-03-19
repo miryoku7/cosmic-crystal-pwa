@@ -621,6 +621,7 @@ body{
 // ==================== GAME STATE ====================
 let G = {
   crystals: 0, totalCrystals: 0, totalClicks: 0,
+  runCrystals: 0, // 今回の転生周回で稼いだクリスタル累計
   facilities: {}, upgrades: {}, achievements: new Set(),
   soulCrystals: 0, totalSoulCrystals: 0, reincarnations: 0,
   reincUpgrades: {}, startTime: Date.now(), lastSave: Date.now(),
@@ -769,7 +770,8 @@ function getPerSec() {
   return total;
 }
 function calcReincSouls() {
-  return Math.floor(Math.sqrt(G.totalCrystals / 1e6));
+  // 今回の周回で稼いだクリスタルを基にソウルを計算
+  return Math.floor(Math.sqrt(G.runCrystals / 1e6));
 }
 
 // ==================== CLICK ====================
@@ -777,6 +779,7 @@ function doClick(e) {
   const val = getClickValue();
   G.crystals += val;
   G.totalCrystals += val;
+  G.runCrystals += val;
   G.totalClicks++;
   G.totalAllTime += val;
   spawnParticle(e, val);
@@ -950,11 +953,14 @@ function doReincarnation() {
   G.soulCrystals += souls;
   G.totalSoulCrystals += souls;
   G.reincarnations++;
+  // 現在の所持クリスタルと施設・通常アップグレードのみリセット
+  // totalCrystals・totalClicks・totalAllTime は累計なので引き継ぐ
   G.crystals = 0;
-  G.totalCrystals = 0;
+  G.runCrystals = 0; // 今回の周回クリスタルをリセット（次の周回の開始）
   G.facilities = {};
   G.upgrades = {};
   closeReincModal();
+  saveGame();
   notify('🌀 転生完了！+' + fmt(souls) + ' ソウルクリスタル');
   renderAll();
 }
@@ -1197,6 +1203,10 @@ function loadGame() {
       const d = JSON.parse(raw);
       Object.assign(G, d);
       G.achievements = new Set(d.achievements || []);
+      // 旧セーブデータの互换性: runCrystalsがなければtotalCrystalsで代用
+      if (G.runCrystals === undefined || G.runCrystals === null) {
+        G.runCrystals = G.totalCrystals || 0;
+      }
     }
   } catch(e) {}
 }
@@ -1210,6 +1220,7 @@ function gameTick() {
   const production = getPerSec() * dt;
   G.crystals += production;
   G.totalCrystals += production;
+  G.runCrystals += production;
   G.totalAllTime += production;
   updateDisplays();
   checkAchievements();
