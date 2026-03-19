@@ -481,10 +481,22 @@ body{
   </div>
 </div>
 
+<!-- ===== UPDATE BANNER ===== -->
+<div class="install-banner" id="updateBanner" style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(251,191,36,0.05));border-top:1px solid rgba(251,191,36,0.3)">
+  <div class="install-banner-text">
+    <strong>⚡ アップデートあり</strong>
+    新しいバージョンが利用可能です
+  </div>
+  <div class="install-banner-btns">
+    <button class="ib-btn install" onclick="applyUpdate()" style="background:rgba(251,191,36,0.2);border-color:rgba(251,191,36,0.4);color:#fbbf24">更新</button>
+    <button class="ib-btn dismiss" onclick="document.getElementById('updateBanner').classList.remove('show')">後で</button>
+  </div>
+</div>
+
 <!-- ===== MAIN APP ===== -->
 <div class="app">
   <header class="header">
-    <h1>✦ Cosmic Crystal</h1>
+    <h1>✦ Cosmic Crystal <span id="versionBadge" style="font-size:0.6rem;opacity:0.5;letter-spacing:1px;font-family:'Rajdhani',sans-serif;-webkit-text-fill-color:var(--dim);background:none"></span></h1>
     <div class="header-stats">
       <span>クリック: <span class="val" id="hTotalClicks">0</span></span>
       <span>転生: <span class="val" id="hReincs">0</span></span>
@@ -617,6 +629,9 @@ body{
 
 <script>
 'use strict';
+
+// ==================== VERSION ====================
+const APP_VERSION = '1.2.0';
 
 // ==================== GAME STATE ====================
 let G = {
@@ -1283,10 +1298,40 @@ function init() {
   setInterval(gameTick, 50);
   setInterval(renderTick, 200);
 
-  // Register Service Worker
+  // バージョンバッジを動的に設定
+  document.getElementById('versionBadge').textContent = 'v' + APP_VERSION;
+
+  // Register Service Worker + 更新検知
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').then(reg => {
+      // 新しいSWが待機中の場合、更新バナーを表示
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
+      // 起動時に既に待機中のSWがあれば通知
+      if (reg.waiting) showUpdateBanner();
+    }).catch(() => {});
   }
+}
+
+function showUpdateBanner() {
+  const banner = document.getElementById('updateBanner');
+  if (banner) banner.classList.add('show');
+}
+function applyUpdate() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg && reg.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  }
+  window.location.reload();
 }
 
 init();
